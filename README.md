@@ -1,7 +1,7 @@
 The Colour Stealing Cloak
 =========================
 
-An interactive, wearable art project.
+An interactive, wearable art project. Steal colours by touching them and transfer them to the cloak. Video demonstration: http://vimeo.com/79153816
 
 Components
 ----------
@@ -26,12 +26,15 @@ Alice, looking Bob straight in the eye: “Such a lovely colour! _I’m going to
 
 Bob: "???!!"
 
-_Alice points to Bob's hat and presses the 'sense' button with her thumb. The cloak changes colour to match Bob's hat_
+_Alice touches Bob's hat and presses the 'sense' button with her thumb. The cloak changes colour to match Bob's hat_
 
 _Bob's mind is blown_
 
-Demo
+
+Photos
 ------
 
-http://vimeo.com/79153816
+![Glove with sensor and buttons](https://raw.githubusercontent.com/tangentmonger/colourstealingcloak/master/images/cloakglove.jpg "Glove with sensor and buttons")
+![LEDs](https://raw.githubusercontent.com/tangentmonger/colourstealingcloak/master/images/cloakleds.jpg "LEDs")
+![Battery in pouch](https://raw.githubusercontent.com/tangentmonger/colourstealingcloak/master/images/battery.jpg "Battery in pouch")
 
