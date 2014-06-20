@@ -28,7 +28,7 @@ Bob: "???!!"
 
 _Alice points to Bob's hat and presses the 'sense' button with her thumb. The cloak changes colour to match Bob's hat_
 
-Bob: <mind blown>
+_Bob's mind is blown_
 
 Demo
 ------
