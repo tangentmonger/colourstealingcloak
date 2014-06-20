@@ -14,14 +14,20 @@ Components
 Script
 ------
 
-Alice, wearing the cloak (which is twinkling white)
-Bob, wearing a blue hat
+_Alice, wearing the cloak (which is twinkling white)_
+
+_Bob, wearing a blue hat_
 
 Alice, looking at Bob's hat: “Oh, I like your hat! It’s a lovely shade of blue!”
+
 Bob: "Oh, thank you!"
-Alice, looking Bob straight in the eye: “Such a lovely colour! I’m going to steal your colour!!!”
+
+Alice, looking Bob straight in the eye: “Such a lovely colour! _I’m going to steal your colour!!!_”
+
 Bob: "???!!"
-*Alice points to Bob's hat and presses the 'sense' button with her thumb. The cloak changes colour to match Bob's hat
+
+_Alice points to Bob's hat and presses the 'sense' button with her thumb. The cloak changes colour to match Bob's hat_
+
 Bob: <mind blown>
 
 Demo
