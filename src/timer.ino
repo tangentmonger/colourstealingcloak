@@ -296,7 +296,7 @@ void calculateNewPixelColour() {
             pixelColour[twinkle[0]] = alteredColour(targetColour);
             break;
         case fire:
-            pixelColour[twinkle[0]] = Colour(255,0,0); //TODO temporary all-red
+            pixelColour[twinkle[0]] = getFirePixelColour(twinkle[0]);
             break;
         case absinthe:
             pixelColour[twinkle[0]] = Colour(0,255,0); //TODO temporary all-green
@@ -313,7 +313,7 @@ void calculateNewPixelColour() {
                         pixelColour[twinkle[0]] = alteredColour(previousTargetColour);
                         break;
                     case fire:
-                        pixelColour[twinkle[0]] = Colour(255,0,0); //TODO temporary all-red
+                        pixelColour[twinkle[0]] = getFirePixelColour(twinkle[0]);
                         break;
                     case absinthe:
                         pixelColour[twinkle[0]] = Colour(0,255,0); //TODO temporary all-green
@@ -328,6 +328,44 @@ void calculateNewPixelColour() {
     }
 }
 
+Colour getFirePixelColour(int pixelID) {
+    //from the top, in layers:
+    //black, red, orange, yellow, white
+
+    //roughly whereabouts is this pixel?
+    int distanceFromTop = placeOfPixel[pixelID];
+
+    //these represent the layer at which the colour is pure. Fade around them
+    int whiteBand = int(nPixels * 0.8);
+    int yellowBand = int(nPixels * 0.6);
+    int orangeBand = int(nPixels * 0.4);
+    int redBand = int(nPixels * 0.2);
+    int blackBand = 0;
+
+    int red = 255;
+    if (distanceFromTop <= redBand) {
+        red = int(long(distanceFromTop - blackBand) * 255 ) / long(redBand - blackBand);
+    }
+    
+    int green = 0;
+    if (distanceFromTop >= yellowBand) {
+        green = 255;
+    }
+    else if (distanceFromTop >= redBand) {
+        green = int((long(distanceFromTop - redBand) * 255 ) / long(yellowBand - redBand));
+    }
+
+    int blue = 0;
+    if (distanceFromTop >= whiteBand) {
+        blue = 255;
+    }
+    else if (distanceFromTop >= yellowBand) {
+        blue = int((long(distanceFromTop - yellowBand) * 255 ) / long(whiteBand - yellowBand));
+    }
+
+    return Colour(red, green, blue);
+
+}
 
 void updateTwinkle() {
     //Alter colours of pixels from black to pixelColour and back, according to twinkleTable (a rough, skewed sine wave)
@@ -397,7 +435,7 @@ Colour Wheel(byte WheelPos)
 }
 
 //Toggle state of Arduino onboard LED. Useful for debugging
-void toggleLED13(){
+void toggleLED13 () {
     static bool LED13 = false;
     if(LED13) {
         LED13 = false;
