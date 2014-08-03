@@ -29,7 +29,7 @@ const int sizeTwinkle = 20;
 byte twinkle[sizeTwinkle];
 byte twinkleTable[20] = {0,7,13,20,13,9,7,4,3,2,1,1,0,0,0,0,0,0};
 //enum modes {defaultWhite, subtleRainbow, madRainbow, sensedColour, sensedWipe} mode = defaultWhite;
-enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = fire;
+enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = sea;
 
 const byte alterFactor = 7;
 
@@ -175,10 +175,26 @@ ISR(TIMER1_OVF_vect) {
     //if(count==488){ // ~1Hz
     //if(count==48){ // ~10Hz
    
-    if(count==15){ //~40Hz
-        count = 0;
-        twinkleDue = true;
-    }
+    
+    //different modes twinkle at different rates
+    switch(mode) {
+        case defaultWhite:
+        case fire:
+        case sensedColour:
+        case sensedWipe:
+        case absinthe:
+            if(count>=15){ //~40Hz
+                count = 0;
+                twinkleDue = true;
+            }
+            break;
+        case sea:
+            if(count>=30){ //~40Hz
+                count = 0;
+                twinkleDue = true;
+            }
+            break;
+       }
 }
 
 //--------------------------------------------------------
@@ -302,7 +318,7 @@ void calculateNewPixelColour() {
             pixelColour[twinkle[0]] = Colour(0,255,0); //TODO temporary all-green
             break;
         case sea:
-            pixelColour[twinkle[0]] = Colour(0,0,255); //TODO temporary all-blue
+            pixelColour[twinkle[0]] = getSeaPixelColour(twinkle[0]);
             break;
         case sensedWipe:
             if(placeOfPixel[twinkle[0]] >= (stripeTop + stripeSize)) {
@@ -319,7 +335,7 @@ void calculateNewPixelColour() {
                         pixelColour[twinkle[0]] = Colour(0,255,0); //TODO temporary all-green
                         break;
                     case sea:
-                        pixelColour[twinkle[0]] = Colour(0,0,255); //TODO temporary all-blue
+                        pixelColour[twinkle[0]] = getSeaPixelColour(twinkle[0]);
                         break;
                 }
             } else {
@@ -367,6 +383,42 @@ Colour getFirePixelColour(int pixelID) {
 
 }
 
+Colour getSeaPixelColour(int pixelID) {
+    //from the top, in layers:
+    //white, blue/green, black
+
+    //roughly whereabouts is this pixel?
+    int distanceFromTop = placeOfPixel[pixelID];
+
+    //these represent the layer at which the colour is pure. Fade around them
+    int whiteBand = int(0);
+    int bluegreenBand = int(nPixels * 0.5);
+    int blackBand = nPixels;
+    
+    int red;
+    int green;
+    int blue;
+
+    if (distanceFromTop >= bluegreenBand) {
+        //fade from blue/green to black
+        red = 0;
+        int total = 255 - int(long(distanceFromTop - bluegreenBand) * 255) / long(blackBand - bluegreenBand);
+        green = random(0, total);
+        blue = total - green;
+    }
+    else if (distanceFromTop >= whiteBand) {
+        //fade from white to blue/green
+        int totalToRemove = int(long(distanceFromTop - whiteBand) * 255) / long(bluegreenBand - whiteBand);
+        int removeFromGreen = random(0, totalToRemove);
+        green = 255 - removeFromGreen;
+        blue = 255 - (totalToRemove-removeFromGreen);
+        red = 255 - totalToRemove;
+    }
+    
+
+    return Colour(red, green, blue);
+
+}
 void updateTwinkle() {
     //Alter colours of pixels from black to pixelColour and back, according to twinkleTable (a rough, skewed sine wave)
 
