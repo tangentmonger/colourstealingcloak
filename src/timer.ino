@@ -28,7 +28,7 @@ volatile bool twinkleDue = false;
 const int sizeTwinkle = 20;
 byte twinkle[sizeTwinkle];
 byte twinkleTable[20] = {0,7,13,20,13,9,7,4,3,2,1,1,0,0,0,0,0,0};
-enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = fire;
+enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = sea;
 
 const byte alterFactor = 7;
 
@@ -394,32 +394,24 @@ Colour getSeaPixelColour(int pixelID) {
     int distanceFromTop = placeOfPixel[pixelID];
 
     //these represent the layer at which the colour is pure. Fade around them
-    int whiteBand = int(0);
+    int whiteBand = 0;
     int bluegreenBand = int(nPixels * 0.5);
     int blackBand = nPixels;
     
-    int red;
-    int green;
-    int blue;
-
+    Colour newColour;
+    int greenPortion = random(0, 255);
+    int bluePortion = 255 - greenPortion; 
+    
     if (distanceFromTop >= bluegreenBand) {
         //fade from blue/green to black
-        red = 0;
-        int total = 255 - int(long(distanceFromTop - bluegreenBand) * 255) / long(blackBand - bluegreenBand);
-        green = random(0, total);
-        blue = total - green;
+        newColour = selectFade(Colour(0, greenPortion, bluePortion), black, blackBand - bluegreenBand, distanceFromTop - bluegreenBand);
     }
     else if (distanceFromTop >= whiteBand) {
         //fade from white to blue/green
-        int totalToRemove = int(long(distanceFromTop - whiteBand) * 255) / long(bluegreenBand - whiteBand);
-        int removeFromGreen = random(0, totalToRemove);
-        green = 255 - removeFromGreen;
-        blue = 255 - (totalToRemove-removeFromGreen);
-        red = 255 - totalToRemove;
+        newColour = selectFade(white, Colour(0, greenPortion, bluePortion), bluegreenBand - whiteBand, distanceFromTop - whiteBand);
     }
-    
 
-    return Colour(red, green, blue);
+    return newColour;
 
 }
 
