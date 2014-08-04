@@ -1,4 +1,4 @@
-//Cloak v2.2
+//Cloak v2.3
 //Twinkles white by default.
 //On 'sense' button, washes the sensed colour from top to bottom
 //On 'mode' button, switches between white, fire, absinthe and sea modes
@@ -9,7 +9,7 @@
 
 //0 = no glove connected
 //1 = glove is connected
-#define gloveconnected 0
+#define gloveconnected 1
 
 uint8_t LED_DATA_PIN = 4; // LED White wire 
 uint8_t LED_CLOCK_PIN = 5; // LED Green wire
@@ -148,8 +148,6 @@ ISR(INT0_vect) {
     Serial.write(13);
 }
 
-
-
 //handwards
 ISR(INT1_vect) {
     static unsigned long last_interrupt_time = 0;
@@ -188,7 +186,7 @@ ISR(TIMER1_OVF_vect) {
             }
             break;
         case sea:
-            if(count>=30){ //~40Hz
+            if(count>=30){ //~20Hz
                 count = 0;
                 twinkleDue = true;
             }
@@ -222,23 +220,14 @@ void advanceMode() {
 }
 
 void doTwinkle() {
-    
-    //toggleLED13();
-    
     shiftTwinkleList();
-
     addNewPixelToTwinkleList();
-
     calculateNewPixelColour();
-
     updateTwinkle();   
-
     if(mode == sensedWipe) {
         updateWipe();
     }
-    
     strip.show();
-
 }
 
 
@@ -330,7 +319,6 @@ void calculateNewPixelColour() {
             break;
         case sensedWipe:
             if(placeOfPixel[twinkle[0]] >= (stripeTop + stripeSize)) {
-            //if(true) {
                 switch(previousMode) {
                     case defaultWhite:
                     case sensedColour:
@@ -406,9 +394,9 @@ Colour getSeaPixelColour(int pixelID) {
         //fade from blue/green to black
         newColour = selectFade(Colour(0, greenPortion, bluePortion), black, blackBand - bluegreenBand, distanceFromTop - bluegreenBand);
     }
-    else if (distanceFromTop >= whiteBand) {
+    else {
         //fade from white to blue/green
-        newColour = selectFade(white, Colour(0, greenPortion, bluePortion), bluegreenBand - whiteBand, distanceFromTop - whiteBand);
+        newColour = selectFade(white, Colour(0, greenPortion, bluePortion), bluegreenBand, distanceFromTop);
     }
 
     return newColour;
@@ -453,19 +441,19 @@ void updateTwinkle() {
 
 void updateWipe(){
     pixelColour[pixelInPlace[stripeTop+stripeSize]] = alteredColour(targetColour); // set a colour for wipe (and any twinking involvement)
-        for(int i=0; i<stripeSize && (stripeTop+i)<nPixels; i++) {
-            Colour newColour;
-            for (int rgb = 0; rgb<3; rgb++) {
-                double update = (pixelColour[pixelInPlace[stripeTop+i]].array[rgb] * wipeTable[i]) / stripeSize;
-                newColour.array[rgb] = (int)update;
-             }
-            
-            if(stripeTop+i >= 0){
-                strip.setPixelColor(pixelInPlace[stripeTop+i], newColour.raw24); //full brightness just for the swipe
-            }
+    for(int i=0; i<stripeSize && (stripeTop+i)<nPixels; i++) {
+        Colour newColour;
+        for (int rgb = 0; rgb<3; rgb++) {
+            double update = (pixelColour[pixelInPlace[stripeTop+i]].array[rgb] * wipeTable[i]) / stripeSize;
+            newColour.array[rgb] = (int)update;
+         }
+        
+        if(stripeTop+i >= 0){
+            strip.setPixelColor(pixelInPlace[stripeTop+i], newColour.raw24); //full brightness just for the swipe
         }
-        stripeTop++;
-        if(stripeTop > nPixels) mode = sensedColour; //finished
+    }
+    stripeTop++;
+    if(stripeTop > nPixels) mode = sensedColour; //finished
 }
 
 
@@ -487,22 +475,6 @@ Colour alteredColour(Colour input) {
 
 Colour dimColour(Colour input) {
     return Colour(input.red/brightnessDivider, input.green/brightnessDivider, input.blue/brightnessDivider);
-}
-
-//Input a value 0 to 255 to get a color value.
-//The colours are a transition r - g -b - back to r
-Colour Wheel(byte WheelPos)
-{
-    if (WheelPos < 85) {
-        return Colour(WheelPos * 3, 255 - WheelPos * 3, 0);
-    } else if (WheelPos < 170) {
-        WheelPos -= 85;
-        return Colour(255 - WheelPos * 3, 0, WheelPos * 3);
-    } else {
-        WheelPos -= 170;
-        return Colour(0, WheelPos * 3, 255 - WheelPos * 3);
-    }
-
 }
 
 //Toggle state of Arduino onboard LED. Useful for debugging
