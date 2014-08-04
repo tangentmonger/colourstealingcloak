@@ -28,8 +28,7 @@ volatile bool twinkleDue = false;
 const int sizeTwinkle = 20;
 byte twinkle[sizeTwinkle];
 byte twinkleTable[20] = {0,7,13,20,13,9,7,4,3,2,1,1,0,0,0,0,0,0};
-//enum modes {defaultWhite, subtleRainbow, madRainbow, sensedColour, sensedWipe} mode = defaultWhite;
-enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = sea;
+enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = absinthe;
 
 const byte alterFactor = 7;
 
@@ -288,10 +287,19 @@ void shiftTwinkleList() {
 }
 
 void addNewPixelToTwinkleList() {
-    //randomly select a pixel to add to the start of the list (checking it's not already in there)
+    //Select a pixel to begin twinkling
     bool ok = true;
     do {
-        twinkle[0] = random(0, nPixels);
+        if(mode == absinthe && random(0,10) > 0) {
+            //90% chance of selecting the next pixel along to cause coruscation effect
+            twinkle[0] = (twinkle[1]+1) % nPixels;
+        }
+        else
+        {
+            twinkle[0] = random(0, nPixels);
+        }
+
+        //check that chosen pixel is not already twinkling
         ok = true;
         for (int i=1; i<sizeTwinkle; i++) {
             if (twinkle[0] == twinkle[i]) {
@@ -315,7 +323,7 @@ void calculateNewPixelColour() {
             pixelColour[twinkle[0]] = getFirePixelColour(twinkle[0]);
             break;
         case absinthe:
-            pixelColour[twinkle[0]] = Colour(0,255,0); //TODO temporary all-green
+            pixelColour[twinkle[0]] = getAbsinthePixelColour(twinkle[0]);
             break;
         case sea:
             pixelColour[twinkle[0]] = getSeaPixelColour(twinkle[0]);
@@ -332,7 +340,7 @@ void calculateNewPixelColour() {
                         pixelColour[twinkle[0]] = getFirePixelColour(twinkle[0]);
                         break;
                     case absinthe:
-                        pixelColour[twinkle[0]] = Colour(0,255,0); //TODO temporary all-green
+                        pixelColour[twinkle[0]] = getAbsinthePixelColour(twinkle[0]);
                         break;
                     case sea:
                         pixelColour[twinkle[0]] = getSeaPixelColour(twinkle[0]);
@@ -383,6 +391,11 @@ Colour getFirePixelColour(int pixelID) {
 
 }
 
+Colour getAbsinthePixelColour(int pixelID) {
+
+    return Colour(0,255,0);
+}
+
 Colour getSeaPixelColour(int pixelID) {
     //from the top, in layers:
     //white, blue/green, black
@@ -419,16 +432,40 @@ Colour getSeaPixelColour(int pixelID) {
     return Colour(red, green, blue);
 
 }
-void updateTwinkle() {
-    //Alter colours of pixels from black to pixelColour and back, according to twinkleTable (a rough, skewed sine wave)
 
+Colour selectFade(Colour startColour, Colour endColour, int fadeLength, int position) {
+    Colour newColour;
+    for (int rgb = 0; rgb<3; rgb++) {
+        //position is zero-based, so fadeLength is shortened to match
+        long update = long(startColour.array[rgb]) + ((long(endColour.array[rgb] - startColour.array[rgb]) * position) / (fadeLength - 1));
+        newColour.array[rgb] = int(update);
+    }
+    return newColour;
+}
+
+
+void updateTwinkle() {
+    //Select the next colour for each pixel that is currently twinkling
     for (int i=0; i<sizeTwinkle; i++) {
         Colour newColour;
-        for (int rgb = 0; rgb<3; rgb++) {
-            double update = (pixelColour[twinkle[i]].array[rgb] * twinkleTable[i]) / sizeTwinkle;
-            newColour.array[rgb] = (int)update;
-         }
-         strip.setPixelColor(twinkle[i], dimColour(newColour).raw24); //limit brightness at the last moment
+        if (mode == absinthe) {
+            //black - white - pixelColour - black
+            if (i < 4) {
+                newColour = selectFade(Colour(0,0,0), Colour(255,255,255), 4, i);
+            } else if (i < 12) {
+                newColour = selectFade(Colour(255,255,255), pixelColour[twinkle[i]], 8, i-4);
+            } else {
+                newColour = selectFade(pixelColour[twinkle[i]], Colour(0,0,0), 8, i-12);
+            }
+        }
+        else {
+            //Alter colours of pixels from black to pixelColour and back, according to twinkleTable (a rough, skewed sine wave)
+            for (int rgb = 0; rgb<3; rgb++) {
+                double update = (pixelColour[twinkle[i]].array[rgb] * twinkleTable[i]) / sizeTwinkle;
+                newColour.array[rgb] = (int)update;
+            }
+        }
+        strip.setPixelColor(twinkle[i], dimColour(newColour).raw24); //limit brightness at the last moment
     }
 }
 
