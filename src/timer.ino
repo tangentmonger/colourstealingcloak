@@ -28,7 +28,7 @@ volatile bool twinkleDue = false;
 const int sizeTwinkle = 20;
 byte twinkle[sizeTwinkle];
 byte twinkleTable[20] = {0,7,13,20,13,9,7,4,3,2,1,1,0,0,0,0,0,0};
-enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = absinthe;
+enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = fire;
 
 const byte alterFactor = 7;
 
@@ -354,41 +354,31 @@ void calculateNewPixelColour() {
 
 Colour getFirePixelColour(int pixelID) {
     //from the top, in layers:
-    //black, red, orange, yellow, white
+    //red, yellow, white
 
     //roughly whereabouts is this pixel?
     int distanceFromTop = placeOfPixel[pixelID];
 
     //these represent the layer at which the colour is pure. Fade around them
-    int whiteBand = int(nPixels * 0.8);
-    int yellowBand = int(nPixels * 0.6);
-    int orangeBand = int(nPixels * 0.4);
-    int redBand = int(nPixels * 0.2);
+    int whiteBand = nPixels;
+    int yellowBand = int(nPixels * 0.8);
+    int redBand = int(nPixels * 0.4);
     int blackBand = 0;
 
-    int red = 255;
-    if (distanceFromTop <= redBand) {
-        red = int(long(distanceFromTop - blackBand) * 255 ) / long(redBand - blackBand);
+    Colour newColour;
+    if (distanceFromTop < redBand) {
+        newColour = Colour(255,0,0);
     }
-    
-    int green = 0;
-    if (distanceFromTop >= yellowBand) {
-        green = 255;
+    else if (distanceFromTop < yellowBand) {
+        newColour = selectFade(Colour(255,0,0), Colour(255,255,0), yellowBand - redBand, distanceFromTop - redBand);
     }
-    else if (distanceFromTop >= redBand) {
-        green = int((long(distanceFromTop - redBand) * 255 ) / long(yellowBand - redBand));
+    else if (distanceFromTop < whiteBand) {
+        newColour = selectFade(Colour(255,255,0), Colour(255,255,128), whiteBand - yellowBand, distanceFromTop - yellowBand);
+    } 
+    else {
+        newColour = Colour(255,255,128); 
     }
-
-    int blue = 0;
-    if (distanceFromTop >= whiteBand) {
-        blue = 255;
-    }
-    else if (distanceFromTop >= yellowBand) {
-        blue = int((long(distanceFromTop - yellowBand) * 255 ) / long(whiteBand - yellowBand));
-    }
-
-    return Colour(red, green, blue);
-
+    return newColour;
 }
 
 Colour getAbsinthePixelColour(int pixelID) {
