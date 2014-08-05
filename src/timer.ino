@@ -28,7 +28,8 @@ volatile bool twinkleDue = false;
 const int sizeTwinkle = 20;
 byte twinkle[sizeTwinkle];
 byte twinkleTable[20] = {0,7,13,20,13,9,7,4,3,2,1,1,0,0,0,0,0,0};
-enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = sea;
+enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = defaultWhite;
+modes previousMode = defaultWhite;
 
 const byte alterFactor = 7;
 
@@ -53,7 +54,6 @@ const Colour white(255, 255, 255);
 Colour targetColour; //can change in ISRs
 Colour pixelColour[nPixels]; //changes in ISRs
 Colour previousTargetColour;
-modes previousMode;
 void setup() {
     #if gloveconnected
     Serial.begin(38400);
@@ -172,26 +172,10 @@ ISR(TIMER1_OVF_vect) {
     //if(count==488){ // ~1Hz
     //if(count==48){ // ~10Hz
    
-    
-    //different modes twinkle at different rates
-    switch(mode) {
-        case defaultWhite:
-        case fire:
-        case sensedColour:
-        case sensedWipe:
-        case absinthe:
-            if(count>=15){ //~40Hz
-                count = 0;
-                twinkleDue = true;
-            }
-            break;
-        case sea:
-            if(count>=30){ //~20Hz
-                count = 0;
-                twinkleDue = true;
-            }
-            break;
-       }
+    if(count>=15){ //~40Hz
+        count = 0;
+        twinkleDue = true;
+    }
 }
 
 //--------------------------------------------------------
@@ -207,8 +191,8 @@ void advanceMode() {
         case absinthe:
             mode = sea;
             break;
+        case sensedWipe:
         case sensedColour:
-        case sensedWipe: //won't look great because some stripe will be left behind
             EIFR = 0x3; //set flags to 1 to clear
             EIMSK |= _BV(INT0); //reenable the other interrupt, ie a reset in case of no response from sensor
             //fallthrough
@@ -258,6 +242,10 @@ Colour interpretSensorData(char* sensorstring) {
     //todo: refactor this to split out stripe preparation
 
     //prepare for colour stripe wash
+    if(mode == sensedWipe) {
+        //there was already a stripe in progress
+        clearStripe();
+    }
     stripeTop = -(stripeSize);
     previousTargetColour = targetColour;
     targetColour = luxOut; //set atomically because of interrupts
@@ -279,7 +267,18 @@ void addNewPixelToTwinkleList() {
     //Select a pixel to begin twinkling
     bool ok = true;
     do {
-        if(mode == absinthe && random(0,10) > 0) {
+        modes useMode = mode;
+        if(mode == sensedWipe) {
+            //there's a sensed colour wipe going through
+            //are we going to choose above or below?
+            int selectedArea = random(0, nPixels);
+            if (selectedArea > stripeTop + stripeSize) {
+                //below the stripe, so use previous mode to select a pixel
+                useMode = previousMode;
+            }
+        }
+        
+        if(useMode == absinthe && random(0,10) > 0) {
             //90% chance of selecting the next pixel along to cause coruscation effect
             twinkle[0] = (twinkle[1]+1) % nPixels;
         }
@@ -299,7 +298,6 @@ void addNewPixelToTwinkleList() {
     } while (ok == false);
 
 }
-
 void calculateNewPixelColour() {
 
     //work out newly twinking pixel's colour
@@ -339,6 +337,7 @@ void calculateNewPixelColour() {
             }
     }
 }
+
 
 Colour getFirePixelColour(int pixelID) {
     //from the top, in layers:
@@ -439,7 +438,7 @@ void updateTwinkle() {
     }
 }
 
-void updateWipe(){
+void updateWipe() {
     pixelColour[pixelInPlace[stripeTop+stripeSize]] = alteredColour(targetColour); // set a colour for wipe (and any twinking involvement)
     for(int i=0; i<stripeSize && (stripeTop+i)<nPixels; i++) {
         Colour newColour;
@@ -454,6 +453,16 @@ void updateWipe(){
     }
     stripeTop++;
     if(stripeTop > nPixels) mode = sensedColour; //finished
+}
+
+void clearStripe() {
+    //colour wipe has been interrupted by a mode change, so clear it out
+    for(int i=0; i<stripeSize && (stripeTop+i)<nPixels; i++) {
+        if(stripeTop+i >= 0){
+            strip.setPixelColor(pixelInPlace[stripeTop+i], black.raw24);
+        }
+    }
+    strip.show();
 }
 
 
