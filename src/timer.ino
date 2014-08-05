@@ -28,7 +28,8 @@ volatile bool twinkleDue = false;
 const int sizeTwinkle = 20;
 byte twinkle[sizeTwinkle];
 byte twinkleTable[20] = {0,7,13,20,13,9,7,4,3,2,1,1,0,0,0,0,0,0};
-enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = sea;
+enum modes {defaultWhite, fire, absinthe, sea, sensedColour, sensedWipe} mode = absinthe;
+modes previousMode = defaultWhite;
 
 const byte alterFactor = 7;
 
@@ -53,7 +54,6 @@ const Colour white(255, 255, 255);
 Colour targetColour; //can change in ISRs
 Colour pixelColour[nPixels]; //changes in ISRs
 Colour previousTargetColour;
-modes previousMode;
 void setup() {
     #if gloveconnected
     Serial.begin(38400);
@@ -279,7 +279,18 @@ void addNewPixelToTwinkleList() {
     //Select a pixel to begin twinkling
     bool ok = true;
     do {
-        if(mode == absinthe && random(0,10) > 0) {
+        modes useMode = mode;
+        if(mode == sensedWipe) {
+            //there's a sensed colour wipe going through
+            //are we going to choose above or below?
+            int selectedArea = random(0, nPixels);
+            if (selectedArea > stripeTop + stripeSize) {
+                //below the stripe, so use previous mode to select a pixel
+                useMode = previousMode;
+            }
+        }
+        
+        if(useMode == absinthe && random(0,10) > 0) {
             //90% chance of selecting the next pixel along to cause coruscation effect
             twinkle[0] = (twinkle[1]+1) % nPixels;
         }
