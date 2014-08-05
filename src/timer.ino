@@ -181,6 +181,11 @@ ISR(TIMER1_OVF_vect) {
 //--------------------------------------------------------
 
 void advanceMode() {
+    if(mode == sensedWipe) {
+        //there was already a stripe in progress
+        clearStripe();
+    }
+    
     switch(mode) {
         case defaultWhite:
             mode = fire;
