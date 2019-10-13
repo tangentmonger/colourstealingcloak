@@ -1,7 +1,9 @@
 The Colour Stealing Cloak
 =========================
 
-An interactive, wearable art project. Steal colours by touching them and transfer them to the cloak. Video demonstration: http://vimeo.com/79153816
+An interactive, wearable art project. Steal colours by touching them and transfer them to the cloak.
+
+[![Video](./images/video.png)](https://vimeo.com/79153816)
 
 Components
 ----------
